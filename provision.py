@@ -175,13 +175,12 @@ def main() -> None:
     })
 
     post_if_empty(ch_bots, {
-        "title": "Recommended Game & Utility Bots (1-Click Invites)",
+        "title": "Installed Bots & Features",
         "color": 0xF1C40F,
         "description": (
-            "• **Carl-bot** (Reaction Roles in `#roles` + Welcome Cards): https://carl.gg/\n"
-            "• **Counting** (For `#counting`): https://counting.duck.bot/\n"
-            "• **Pokétwo** (Catch Pokémon in `#trivia-and-games`): https://poketwo.net/\n"
-            "• **Truth or Dare** (Party prompts): https://truthordarebot.xyz/"
+            "• **Carl-bot** — Reaction Roles in `#roles` & Welcome Cards\n"
+            "• **Pokétwo** — Catch Pokémon in `#trivia-and-games`\n"
+            "• **BigBois Bot** — `#mc-chat` 2-way Minecraft bridge & `#counting` minigame"
         ),
     })
 
