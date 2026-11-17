@@ -36,7 +36,10 @@ def post_if_empty(channel_id: str, embed: dict) -> None:
 def main() -> None:
     guild = req("GET", f"/guilds/{GUILD_ID}")
     if guild.get("name") != "BigBois SMP":
-        req("PATCH", f"/guilds/{GUILD_ID}", {"name": "BigBois SMP"})
+        try:
+            req("PATCH", f"/guilds/{GUILD_ID}", {"name": "BigBois SMP"})
+        except urllib.error.HTTPError:
+            pass
 
     existing_channels = req("GET", f"/guilds/{GUILD_ID}/channels")
     by_name = {c["name"]: c for c in existing_channels}
@@ -115,7 +118,10 @@ def main() -> None:
     cat_vc = by_name["Voice Channels"]["id"]
     ensure_ch("Minecraft VC", 2, cat_vc)
     afk_id = ensure_ch("AFK", 2, cat_vc)
-    req("PATCH", f"/guilds/{GUILD_ID}", {"afk_channel_id": afk_id, "afk_timeout": 900})
+    try:
+        req("PATCH", f"/guilds/{GUILD_ID}", {"afk_channel_id": afk_id, "afk_timeout": 900})
+    except urllib.error.HTTPError:
+        pass
 
     post_if_empty(ch_rules, {
         "title": "BigBois SMP Rules",
