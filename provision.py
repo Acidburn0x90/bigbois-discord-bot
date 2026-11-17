@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Idempotent Discord server provisioner for BigBois SMP."""
+
+import json
+import os
+import urllib.request
+from pathlib import Path
+
+GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "1572300325786747040")
+TOKEN = (
+    os.environ.get("DISCORD_BOT_TOKEN")
+    or Path.home().joinpath(".config/keys/discord_bot_token").read_text().strip()
+)
+API = "https://discord.com/api/v10"
+RELEASE_BASE = "https://github.com/Acidburn0x90/bigbois-mc-server/releases/download/v26.3-1.0.0"
+
+
+def req(method: str, path: str, payload: dict | None = None) -> dict | list:
+    data = json.dumps(payload).encode() if payload is not None else None
+    headers = {
+        "Authorization": f"Bot {TOKEN}",
+        "User-Agent": "BigBoisSMP/1.0",
+        "Content-Type": "application/json",
+    }
+    r = urllib.request.Request(f"{API}{path}", data=data, headers=headers, method=method)
+    with urllib.request.urlopen(r, timeout=20) as resp:
+        body = resp.read()
+        return json.loads(body) if body else {}
+
+
+def post_if_empty(channel_id: str, embed: dict) -> None:
+    if not req("GET", f"/channels/{channel_id}/messages?limit=1"):
+        req("POST", f"/channels/{channel_id}/messages", {"embeds": [embed]})
+
+
+def main() -> None:
+    guild = req("GET", f"/guilds/{GUILD_ID}")
+    if guild.get("name") != "BigBois SMP":
+        req("PATCH", f"/guilds/{GUILD_ID}", {"name": "BigBois SMP"})
+
+    existing_channels = req("GET", f"/guilds/{GUILD_ID}/channels")
+    by_name = {c["name"]: c for c in existing_channels}
+
+    existing_roles = req("GET", f"/guilds/{GUILD_ID}/roles")
+    roles_by_name = {r["name"]: r for r in existing_roles}
+    everyone_id = roles_by_name["@everyone"]["id"]
+
+    for rname, color in [
+        ("Player", 0x3BA55D),
+        ("Java", 0xE67E22),
+        ("Bedrock", 0x5865F2),
+        ("Console", 0x9B59B6),
+        ("Updates", 0x1ABC9C),
+    ]:
+        if rname not in roles_by_name:
+            req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": True})
+
+    bot_id = req("GET", "/users/@me")["id"]
+    ro_overwrites = [
+        {"id": everyone_id, "type": 0, "allow": "0", "deny": "2048"},
+        {"id": bot_id, "type": 1, "allow": "18432", "deny": "0"},
+    ]
+
+    def ensure_cat(name: str, pos: int) -> str:
+        if name in by_name and by_name[name]["type"] == 4:
+            return by_name[name]["id"]
+        c = req("POST", f"/guilds/{GUILD_ID}/channels", {"name": name, "type": 4, "position": pos})
+        by_name[name] = c
+        return c["id"]
+
+    def ensure_ch(name: str, ctype: int, parent_id: str, topic: str = "", ro: bool = False) -> str:
+        if name in by_name and by_name[name]["type"] == ctype:
+            if by_name[name].get("parent_id") != parent_id or ro:
+                patch = {"parent_id": parent_id}
+                if ro:
+                    patch["permission_overwrites"] = ro_overwrites
+                req("PATCH", f"/channels/{by_name[name]['id']}", patch)
+            return by_name[name]["id"]
+        payload = {"name": name, "type": ctype, "parent_id": parent_id}
+        if topic:
+            payload["topic"] = topic
+        if ro:
+            payload["permission_overwrites"] = ro_overwrites
+        c = req("POST", f"/guilds/{GUILD_ID}/channels", payload)
+        by_name[name] = c
+        return c["id"]
+
+    cat_start = ensure_cat("👋 START HERE", 0)
+    ch_welcome = ensure_ch("welcome-and-info", 0, cat_start, "Server IP, cross-play setup & quick start", ro=True)
+    ch_rules = ensure_ch("rules", 0, cat_start, "Community & SMP rules", ro=True)
+    ch_roles = ensure_ch("roles", 0, cat_start, "Grab your Java / Bedrock / Console / Updates roles", ro=True)
+    ensure_ch("announcements", 0, cat_start, "Server updates & maintenance notices", ro=True)
+
+    cat_packs = ensure_cat("📦 MODPACKS & GUIDES", 1)
+    ch_modpacks = ensure_ch("modpacks", 0, cat_packs, "Direct downloads for Lite / Standard / Ultra 26.3 packs", ro=True)
+    ch_crossplay = ensure_ch("crossplay-guide", 0, cat_packs, "How to join from Switch, Xbox, PlayStation, Mobile & PC", ro=True)
+
+    cat_mc = ensure_cat("⛏️ MINECRAFT", 2)
+    ensure_ch("mc-chat", 0, cat_mc, "Live 2-way chat bridge with BigBois Fabric 26.3")
+    ensure_ch("mc-status", 0, cat_mc, "Server start/stop notifications", ro=True)
+    ensure_ch("coords-and-builds", 0, cat_mc, "Base coordinates, farms & screenshots")
+    ensure_ch("suggestions", 0, cat_mc, "Mod, plugin, and server ideas")
+    ensure_ch("bug-reports", 0, cat_mc, "Connection, mod, or cross-play issues")
+
+    cat_games = ensure_cat("🎮 GAMES & BOTS", 3)
+    ch_bots = ensure_ch("bot-commands", 0, cat_games, "Bot commands & game-bot setup")
+    ensure_ch("counting", 0, cat_games, "Count up from 1 without breaking the streak")
+    ensure_ch("trivia-and-games", 0, cat_games, "Discord minigames & trivia")
+
+    cat_comm = ensure_cat("💬 COMMUNITY", 4)
+    ensure_ch("general", 0, cat_comm, "General hangout")
+    ensure_ch("clips-and-highlights", 0, cat_comm, "Clips and highlights")
+    ensure_ch("memes", 0, cat_comm, "Memes and screenshots")
+
+    cat_vc = by_name["Voice Channels"]["id"]
+    ensure_ch("Minecraft VC", 2, cat_vc)
+    afk_id = ensure_ch("AFK", 2, cat_vc)
+    req("PATCH", f"/guilds/{GUILD_ID}", {"afk_channel_id": afk_id, "afk_timeout": 900})
+
+    post_if_empty(ch_rules, {
+        "title": "BigBois SMP Rules",
+        "color": 0xE74C3C,
+        "description": (
+            "1. **Be respectful** — no harassment, hate speech, or drama.\n"
+            "2. **No griefing or stealing** — respect builds, chests, and farms.\n"
+            "3. **No cheating/exploits** — X-ray, duping, or lag machines will get you banned.\n"
+            "4. **Keep it clean** — use the right channels (`#mc-chat` bridges directly into in-game chat!)."
+        ),
+    })
+
+    post_if_empty(ch_crossplay, {
+        "title": "How to Join (Java, Bedrock & Consoles)",
+        "color": 0x9B59B6,
+        "description": (
+            "**PC — Java Edition (`1.8` – `26.3`):**\n"
+            "• Multiplayer → Add Server → **`mc.bigbois.live`**\n\n"
+            "**Mobile / Windows Bedrock:**\n"
+            "• Play → Servers → Add Server → Address: **`mc.bigbois.live`** | Port: **`19132`**\n\n"
+            "**Nintendo Switch / Xbox / PlayStation:**\n"
+            "• Set your console's primary DNS to **BedrockConnect** (`104.238.130.180`, secondary `1.1.1.1`), join any featured server, and enter **`mc.bigbois.live`** port **`19132`**.\n"
+            "• No Java account needed (Floodgate handles login)."
+        ),
+    })
+
+    # Always refresh #modpacks with direct GitHub Release download URLs
+    req("POST", f"/channels/{ch_modpacks}/messages", {
+        "embeds": [{
+            "title": "Download BigBois 26.3 Modpacks (Fabric 0.20.1)",
+            "color": 0x5865F2,
+            "description": (
+                "**1. Lite (`28` mods · `32 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap:\n"
+                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-lite-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-lite-26.3.mrpack)\n\n"
+                "**2. Standard (`53` mods · `46 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
+                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-standard-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-standard-26.3.mrpack)\n\n"
+                "**3. Ultra DH+Shaders (`55` mods · `75 MiB`)** — Standard + Distant Horizons (`256` LODs) + Iris + MakeUp-UltraFast:\n"
+                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-ultra-dh-shaders-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-ultra-dh-shaders-26.3.mrpack)\n\n"
+                "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`)."
+            ),
+        }]
+    })
+
+    post_if_empty(ch_roles, {
+        "title": "Self-Assignable Roles",
+        "color": 0x1ABC9C,
+        "description": (
+            "Roles created: `@Player`, `@Java`, `@Bedrock`, `@Console`, `@Updates`.\n"
+            "Once you invite **Carl-bot** (see `#bot-commands`), bind reaction roles to this message!"
+        ),
+    })
+
+    post_if_empty(ch_bots, {
+        "title": "Recommended Game & Utility Bots (1-Click Invites)",
+        "color": 0xF1C40F,
+        "description": (
+            "• **Carl-bot** (Reaction Roles in `#roles` + Welcome Cards): https://carl.gg/\n"
+            "• **Counting** (For `#counting`): https://counting.duck.bot/\n"
+            "• **Pokétwo** (Catch Pokémon in `#trivia-and-games`): https://poketwo.net/\n"
+            "• **Truth or Dare** (Party prompts): https://truthordarebot.xyz/"
+        ),
+    })
+
+    print("Provisioned BigBois SMP successfully.")
+
+
+if __name__ == "__main__":
+    main()
