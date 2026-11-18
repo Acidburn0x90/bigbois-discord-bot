@@ -74,10 +74,10 @@ def main() -> None:
             req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": True})
 
     bot_id = req("GET", "/users/@me")["id"]
-    # Read-only for @everyone (deny SEND_MESSAGES=2048); allow bot SEND_MESSAGES+MANAGE_MESSAGES+EMBED_LINKS (26624)
+    # Read-only for @everyone (deny SEND_MESSAGES=2048); allow bot SEND_MESSAGES+EMBED_LINKS (18432)
     ro_overwrites = [
         {"id": everyone_id, "type": 0, "allow": "0", "deny": "2048"},
-        {"id": bot_id, "type": 1, "allow": "26624", "deny": "0"},
+        {"id": bot_id, "type": 1, "allow": "18432", "deny": "0"},
     ]
 
     def ensure_cat(name: str, pos: int) -> str:
@@ -92,8 +92,6 @@ def main() -> None:
             patch = {}
             if by_name[name].get("parent_id") != parent_id:
                 patch["parent_id"] = parent_id
-            if ro:
-                patch["permission_overwrites"] = ro_overwrites
             if pos is not None and by_name[name].get("position") != pos:
                 patch["position"] = pos
             if patch:
