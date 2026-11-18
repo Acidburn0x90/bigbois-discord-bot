@@ -12,7 +12,16 @@ TOKEN = (
     or Path.home().joinpath(".config/keys/discord_bot_token").read_text().strip()
 )
 API = "https://discord.com/api/v10"
-RELEASE_BASE = "https://github.com/Acidburn0x90/bigbois-mc-server/releases/download/v26.3-1.0.0"
+GITHUB_RELEASE_API = "https://api.github.com/repos/Acidburn0x90/bigbois-mc-server/releases/latest"
+
+
+def get_latest_release_assets() -> tuple[str, dict[str, str]]:
+    r = urllib.request.Request(GITHUB_RELEASE_API, headers={"User-Agent": "BigBoisSMP/1.0"})
+    with urllib.request.urlopen(r, timeout=15) as resp:
+        data = json.loads(resp.read())
+    tag = data.get("tag_name", "v26.3-1.0.0")
+    assets = {a["name"]: a["browser_download_url"] for a in data.get("assets", [])}
+    return tag, assets
 
 
 def req(method: str, path: str, payload: dict | None = None) -> dict | list:
@@ -28,9 +37,15 @@ def req(method: str, path: str, payload: dict | None = None) -> dict | list:
         return json.loads(body) if body else {}
 
 
-def post_if_empty(channel_id: str, embed: dict) -> None:
-    if not req("GET", f"/channels/{channel_id}/messages?limit=1"):
-        req("POST", f"/channels/{channel_id}/messages", {"embeds": [embed]})
+def replace_bot_embed(channel_id: str, embed: dict) -> None:
+    """Delete previous bot messages in channel so only the latest message remains."""
+    for m in req("GET", f"/channels/{channel_id}/messages?limit=25"):
+        if m.get("author", {}).get("bot"):
+            try:
+                req("DELETE", f"/channels/{channel_id}/messages/{m['id']}")
+            except urllib.error.HTTPError:
+                pass
+    req("POST", f"/channels/{channel_id}/messages", {"embeds": [embed]})
 
 
 def main() -> None:
@@ -59,9 +74,10 @@ def main() -> None:
             req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": True})
 
     bot_id = req("GET", "/users/@me")["id"]
+    # Read-only for @everyone (deny SEND_MESSAGES=2048); allow bot SEND_MESSAGES+MANAGE_MESSAGES+EMBED_LINKS (26624)
     ro_overwrites = [
         {"id": everyone_id, "type": 0, "allow": "0", "deny": "2048"},
-        {"id": bot_id, "type": 1, "allow": "18432", "deny": "0"},
+        {"id": bot_id, "type": 1, "allow": "26624", "deny": "0"},
     ]
 
     def ensure_cat(name: str, pos: int) -> str:
@@ -130,7 +146,7 @@ def main() -> None:
     except urllib.error.HTTPError:
         pass
 
-    post_if_empty(ch_rules, {
+    replace_bot_embed(ch_rules, {
         "title": "BigBois SMP Rules",
         "color": 0xE74C3C,
         "description": (
@@ -141,7 +157,7 @@ def main() -> None:
         ),
     })
 
-    post_if_empty(ch_crossplay, {
+    replace_bot_embed(ch_crossplay, {
         "title": "How to Join (Java, Bedrock & Consoles)",
         "color": 0x9B59B6,
         "description": (
@@ -155,24 +171,25 @@ def main() -> None:
         ),
     })
 
-    # Always refresh #modpacks with direct GitHub Release download URLs
-    req("POST", f"/channels/{ch_modpacks}/messages", {
-        "embeds": [{
-            "title": "Download BigBois 26.3 Modpacks (Fabric 0.20.1)",
-            "color": 0x5865F2,
-            "description": (
-                "**1. Lite (`28` mods · `32 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap:\n"
-                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-lite-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-lite-26.3.mrpack)\n\n"
-                "**2. Standard (`53` mods · `46 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
-                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-standard-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-standard-26.3.mrpack)\n\n"
-                "**3. Ultra DH+Shaders (`55` mods · `75 MiB`)** — Standard + Distant Horizons (`256` LODs) + Iris + MakeUp-UltraFast:\n"
-                f"• [CurseForge (.zip)]({RELEASE_BASE}/bigbois-ultra-dh-shaders-26.3.zip) · [Modrinth / Prism (.mrpack)]({RELEASE_BASE}/bigbois-ultra-dh-shaders-26.3.mrpack)\n\n"
-                "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`)."
-            ),
-        }]
+    tag, assets = get_latest_release_assets()
+    def link(name: str, fallback: str) -> str:
+        return assets.get(name, f"https://github.com/Acidburn0x90/bigbois-mc-server/releases/download/{tag}/{fallback}")
+
+    replace_bot_embed(ch_modpacks, {
+        "title": f"Download BigBois Modpacks ({tag})",
+        "color": 0x5865F2,
+        "description": (
+            "**1. Lite (`28` mods · `32 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap:\n"
+            f"• [CurseForge (.zip)]({link('bigbois-lite-26.3.zip', 'bigbois-lite-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-lite-26.3.mrpack', 'bigbois-lite-26.3.mrpack')})\n\n"
+            "**2. Standard (`53` mods · `46 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
+            f"• [CurseForge (.zip)]({link('bigbois-standard-26.3.zip', 'bigbois-standard-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-standard-26.3.mrpack', 'bigbois-standard-26.3.mrpack')})\n\n"
+            "**3. Ultra DH+Shaders (`55` mods · `75 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
+            f"• [CurseForge (.zip)]({link('bigbois-ultra-dh-shaders-26.3.zip', 'bigbois-ultra-dh-shaders-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-ultra-dh-shaders-26.3.mrpack', 'bigbois-ultra-dh-shaders-26.3.mrpack')})\n\n"
+            "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`)."
+        ),
     })
 
-    post_if_empty(ch_roles, {
+    replace_bot_embed(ch_roles, {
         "title": "Self-Assignable Roles",
         "color": 0x1ABC9C,
         "description": (
@@ -181,7 +198,7 @@ def main() -> None:
         ),
     })
 
-    post_if_empty(ch_bots, {
+    replace_bot_embed(ch_bots, {
         "title": "Installed Bots & Features",
         "color": 0xF1C40F,
         "description": (
@@ -191,7 +208,7 @@ def main() -> None:
         ),
     })
 
-    post_if_empty(ch_changes, {
+    replace_bot_embed(ch_changes, {
         "title": "Non-Vanilla Server Changes & Features",
         "color": 0x2ECC71,
         "description": (
@@ -202,7 +219,7 @@ def main() -> None:
             "• **World Rules:** **Hard** difficulty · **Keep Inventory** enabled in all dimensions · **1-Player Sleep** (`players_sleeping_percentage = 0`)\n\n"
             "**Cross-Play, LODs & Discord**\n"
             "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
-            "• **World & LODs:** `100`-chunk radius pre-generated + **Distant Horizons `256`-chunk** server LOD streaming\n"
+            "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
             "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
             "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)"
         ),
