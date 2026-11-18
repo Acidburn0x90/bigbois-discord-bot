@@ -214,6 +214,8 @@ def main() -> None:
         "description": (
             "**Gameplay & Custom Recipes**\n"
             "• **Smoker Recipe:** Cook `Rotten Flesh` in a **Smoker** → `Leather` (`100` ticks, `0.1` XP, visible in JEI)\n"
+            "• **QoL Recipes:** `2` Logs → `16` Sticks · `8` Logs → `4` Chests · Hopper from Logs+Iron · Craftable Name Tags & Saddles · Unpack Quartz/Glowstone\n"
+            "• **Inventory Sorting:** Server-side chest & inventory sorting (works for all players; middle-click / `/sort`)\n"
             "• **Veinminer:** Mine entire ore veins at once (works with Fortune/Silk Touch; **only** initial ore costs durability, `0` extra hunger)\n"
             "• **Tree Harvester:** Fell whole trees with fast leaf decay & auto-replanted saplings (**only** initial log costs durability, `0` extra hunger)\n"
             "• **World Rules:** **Hard** difficulty · **Keep Inventory** enabled in all dimensions · **1-Player Sleep** (`players_sleeping_percentage = 0`)\n\n"
