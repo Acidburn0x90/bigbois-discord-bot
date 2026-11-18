@@ -35,9 +35,9 @@ def post_if_empty(channel_id: str, embed: dict) -> None:
 
 def main() -> None:
     guild = req("GET", f"/guilds/{GUILD_ID}")
-    if guild.get("name") != "BigBois SMP":
+    if guild.get("name") != "Minecraft Server":
         try:
-            req("PATCH", f"/guilds/{GUILD_ID}", {"name": "BigBois SMP"})
+            req("PATCH", f"/guilds/{GUILD_ID}", {"name": "Minecraft Server"})
         except urllib.error.HTTPError:
             pass
 
