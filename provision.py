@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Idempotent Discord server provisioner for BigBois SMP."""
 
+import datetime
 import json
 import os
+import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -18,13 +20,15 @@ API = "https://discord.com/api/v10"
 GITHUB_RELEASE_API = "https://api.github.com/repos/Acidburn0x90/bigbois-mc-server/releases/latest"
 
 
-def get_latest_release_assets() -> tuple[str, dict[str, str]]:
+def get_latest_release_assets() -> tuple[str, dict[str, str], int]:
     r = urllib.request.Request(GITHUB_RELEASE_API, headers={"User-Agent": "BigBoisSMP/1.0"})
     with urllib.request.urlopen(r, timeout=15) as resp:
         data = json.loads(resp.read())
     tag = data.get("tag_name", "v26.3-1.0.0")
     assets = {a["name"]: a["browser_download_url"] for a in data.get("assets", [])}
-    return tag, assets
+    pub = data.get("published_at")
+    pub_ts = int(datetime.datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp()) if pub else int(time.time())
+    return tag, assets, pub_ts
 
 
 def req(method: str, path: str, payload: dict | None = None) -> dict | list:
@@ -166,20 +170,26 @@ def main() -> None:
     except urllib.error.HTTPError:
         pass
 
+    now_ts = int(time.time())
+    updated_footer = {"text": "Synced via BigBois Bot"}
+
     replace_bot_embed(ch_rules, {
         "title": "BigBois SMP Rules",
         "color": 0xE74C3C,
+        "footer": updated_footer,
         "description": (
             "1. **Be respectful** — no harassment, hate speech, or drama.\n"
             "2. **No griefing or stealing** — respect builds, chests, and farms.\n"
             "3. **No cheating/exploits** — X-ray, duping, or lag machines will get you banned.\n"
-            "4. **Keep it clean** — use the right channels (`#mc-chat` bridges directly into in-game chat!)."
+            "4. **Keep it clean** — use the right channels (`#mc-chat` bridges directly into in-game chat!).\n\n"
+            f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
         ),
     })
 
     replace_bot_embed(ch_crossplay, {
         "title": "How to Join (Java, Bedrock & Consoles)",
         "color": 0x9B59B6,
+        "footer": updated_footer,
         "description": (
             "**PC — Java Edition (`1.8` – `26.3`):**\n"
             "• Multiplayer → Add Server → **`mc.bigbois.live`**\n\n"
@@ -187,25 +197,28 @@ def main() -> None:
             "• Play → Servers → Add Server → Address: **`mc.bigbois.live`** | Port: **`19132`**\n\n"
             "**Nintendo Switch / Xbox / PlayStation:**\n"
             "• Set your console's primary DNS to **BedrockConnect** (`104.238.130.180`, secondary `1.1.1.1`), join any featured server, and enter **`mc.bigbois.live`** port **`19132`**.\n"
-            "• No Java account needed (Floodgate handles login)."
+            "• No Java account needed (Floodgate handles login).\n\n"
+            f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
         ),
     })
 
-    tag, assets = get_latest_release_assets()
+    tag, assets, pub_ts = get_latest_release_assets()
     def link(name: str, fallback: str) -> str:
         return assets.get(name, f"https://github.com/Acidburn0x90/bigbois-mc-server/releases/download/{tag}/{fallback}")
 
     replace_bot_embed(ch_modpacks, {
         "title": f"Download BigBois Modpacks ({tag})",
         "color": 0x5865F2,
+        "footer": updated_footer,
         "description": (
-            "**1. Lite (`28` mods · `32 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap:\n"
+            "**1. Lite (`29` mods · `35 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap, Inventory Sorting:\n"
             f"• [CurseForge (.zip)]({link('bigbois-lite-26.3.zip', 'bigbois-lite-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-lite-26.3.mrpack', 'bigbois-lite-26.3.mrpack')})\n\n"
-            "**2. Standard (`53` mods · `46 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
+            "**2. Standard (`54` mods · `49 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
             f"• [CurseForge (.zip)]({link('bigbois-standard-26.3.zip', 'bigbois-standard-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-standard-26.3.mrpack', 'bigbois-standard-26.3.mrpack')})\n\n"
-            "**3. Ultra DH+Shaders (`55` mods · `75 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
+            "**3. Ultra DH+Shaders (`56` mods · `79 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
             f"• [CurseForge (.zip)]({link('bigbois-ultra-dh-shaders-26.3.zip', 'bigbois-ultra-dh-shaders-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-ultra-dh-shaders-26.3.mrpack', 'bigbois-ultra-dh-shaders-26.3.mrpack')})\n\n"
-            "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`)."
+            "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`).\n\n"
+            f"*Release published: <t:{pub_ts}:R> · Checked: <t:{now_ts}:R>*"
         ),
     })
 
@@ -255,7 +268,8 @@ def main() -> None:
             "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
             "• **Voice & Tab:** **Simple Voice Chat** (`24454/udp`, optional client mod) + **TabTPS** (live TPS/MSPT/ping in Tab)\n"
             "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
-            "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)"
+            "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)\n\n"
+            f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
         ),
     })
 
