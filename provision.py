@@ -9,7 +9,9 @@ from pathlib import Path
 GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "1572300325786747040")
 TOKEN = (
     os.environ.get("DISCORD_BOT_TOKEN")
-    or Path.home().joinpath(".config/keys/discord_bot_token").read_text().strip()
+    or Path(os.environ.get("DISCORD_TOKEN_FILE", "/etc/bigbois-counting/token")).read_text().strip()
+    if Path(os.environ.get("DISCORD_TOKEN_FILE", "/etc/bigbois-counting/token")).exists()
+    else Path.home().joinpath(".config/keys/discord_bot_token").read_text().strip()
 )
 API = "https://discord.com/api/v10"
 GITHUB_RELEASE_API = "https://api.github.com/repos/Acidburn0x90/bigbois-mc-server/releases/latest"
