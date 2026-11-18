@@ -71,12 +71,16 @@ def main() -> None:
         by_name[name] = c
         return c["id"]
 
-    def ensure_ch(name: str, ctype: int, parent_id: str, topic: str = "", ro: bool = False) -> str:
+    def ensure_ch(name: str, ctype: int, parent_id: str, topic: str = "", ro: bool = False, pos: int | None = None) -> str:
         if name in by_name and by_name[name]["type"] == ctype:
-            if by_name[name].get("parent_id") != parent_id or ro:
-                patch = {"parent_id": parent_id}
-                if ro:
-                    patch["permission_overwrites"] = ro_overwrites
+            patch = {}
+            if by_name[name].get("parent_id") != parent_id:
+                patch["parent_id"] = parent_id
+            if ro:
+                patch["permission_overwrites"] = ro_overwrites
+            if pos is not None and by_name[name].get("position") != pos:
+                patch["position"] = pos
+            if patch:
                 req("PATCH", f"/channels/{by_name[name]['id']}", patch)
             return by_name[name]["id"]
         payload = {"name": name, "type": ctype, "parent_id": parent_id}
@@ -84,36 +88,39 @@ def main() -> None:
             payload["topic"] = topic
         if ro:
             payload["permission_overwrites"] = ro_overwrites
+        if pos is not None:
+            payload["position"] = pos
         c = req("POST", f"/guilds/{GUILD_ID}/channels", payload)
         by_name[name] = c
         return c["id"]
 
     cat_start = ensure_cat("👋 START HERE", 0)
-    ch_welcome = ensure_ch("welcome-and-info", 0, cat_start, "Server IP, cross-play setup & quick start", ro=True)
-    ch_rules = ensure_ch("rules", 0, cat_start, "Community & SMP rules", ro=True)
-    ch_roles = ensure_ch("roles", 0, cat_start, "Grab your Java / Bedrock / Console / Updates roles", ro=True)
-    ensure_ch("announcements", 0, cat_start, "Server updates & maintenance notices", ro=True)
+    ch_welcome = ensure_ch("welcome-and-info", 0, cat_start, "Server IP, cross-play setup & quick start", ro=True, pos=0)
+    ch_rules = ensure_ch("rules", 0, cat_start, "Community & SMP rules", ro=True, pos=1)
+    ch_roles = ensure_ch("roles", 0, cat_start, "Grab your Java / Bedrock / Console / Updates roles", ro=True, pos=2)
+    ensure_ch("announcements", 0, cat_start, "Server updates & maintenance notices", ro=True, pos=3)
 
     cat_packs = ensure_cat("📦 MODPACKS & GUIDES", 1)
-    ch_modpacks = ensure_ch("modpacks", 0, cat_packs, "Direct downloads for Lite / Standard / Ultra 26.3 packs", ro=True)
-    ch_crossplay = ensure_ch("crossplay-guide", 0, cat_packs, "How to join from Switch, Xbox, PlayStation, Mobile & PC", ro=True)
+    ch_modpacks = ensure_ch("modpacks", 0, cat_packs, "Direct downloads for Lite / Standard / Ultra 26.3 packs", ro=True, pos=0)
+    ch_crossplay = ensure_ch("crossplay-guide", 0, cat_packs, "How to join from Switch, Xbox, PlayStation, Mobile & PC", ro=True, pos=1)
+    ch_changes = ensure_ch("server-changes", 0, cat_packs, "Every non-vanilla tweak, recipe, mod, and command on the server", ro=True, pos=2)
 
     cat_mc = ensure_cat("⛏️ MINECRAFT", 2)
-    ensure_ch("mc-chat", 0, cat_mc, "Live 2-way chat bridge with BigBois Fabric 26.3")
-    ensure_ch("mc-status", 0, cat_mc, "Server start/stop notifications", ro=True)
-    ensure_ch("coords-and-builds", 0, cat_mc, "Base coordinates, farms & screenshots")
-    ensure_ch("suggestions", 0, cat_mc, "Mod, plugin, and server ideas")
-    ensure_ch("bug-reports", 0, cat_mc, "Connection, mod, or cross-play issues")
+    ensure_ch("mc-chat", 0, cat_mc, "Live 2-way chat bridge with BigBois Fabric 26.3", pos=0)
+    ensure_ch("mc-status", 0, cat_mc, "Server start/stop notifications", ro=True, pos=1)
+    ensure_ch("coords-and-builds", 0, cat_mc, "Base coordinates, farms & screenshots", pos=2)
+    ensure_ch("suggestions", 0, cat_mc, "Mod, plugin, and server ideas", pos=3)
+    ensure_ch("bug-reports", 0, cat_mc, "Connection, mod, or cross-play issues", pos=4)
 
     cat_games = ensure_cat("🎮 GAMES & BOTS", 3)
-    ch_bots = ensure_ch("bot-commands", 0, cat_games, "Bot commands & game-bot setup")
-    ensure_ch("counting", 0, cat_games, "Count up from 1 without breaking the streak")
-    ensure_ch("trivia-and-games", 0, cat_games, "Discord minigames & trivia")
+    ch_bots = ensure_ch("bot-commands", 0, cat_games, "Bot commands & game-bot setup", pos=0)
+    ensure_ch("counting", 0, cat_games, "Count up from 1 without breaking the streak", pos=1)
+    ensure_ch("trivia-and-games", 0, cat_games, "Discord minigames & trivia", pos=2)
 
     cat_comm = ensure_cat("💬 COMMUNITY", 4)
-    ensure_ch("general", 0, cat_comm, "General hangout")
-    ensure_ch("clips-and-highlights", 0, cat_comm, "Clips and highlights")
-    ensure_ch("memes", 0, cat_comm, "Memes and screenshots")
+    ensure_ch("general", 0, cat_comm, "General hangout", pos=0)
+    ensure_ch("clips-and-highlights", 0, cat_comm, "Clips and highlights", pos=1)
+    ensure_ch("memes", 0, cat_comm, "Memes and screenshots", pos=2)
 
     cat_vc = by_name["Voice Channels"]["id"]
     ensure_ch("Minecraft VC", 2, cat_vc)
@@ -181,6 +188,23 @@ def main() -> None:
             "• **Carl-bot** — Reaction Roles in `#roles` & Welcome Cards\n"
             "• **Pokétwo** — Catch Pokémon in `#trivia-and-games`\n"
             "• **BigBois Bot** — `#mc-chat` 2-way Minecraft bridge & `#counting` minigame"
+        ),
+    })
+
+    post_if_empty(ch_changes, {
+        "title": "Non-Vanilla Server Changes & Features",
+        "color": 0x2ECC71,
+        "description": (
+            "**Gameplay & Custom Recipes**\n"
+            "• **Smoker Recipe:** Cook `Rotten Flesh` in a **Smoker** → `Leather` (`100` ticks, `0.1` XP, visible in JEI)\n"
+            "• **Veinminer:** Mine entire ore veins at once (works with Fortune/Silk Touch; **only** initial ore costs durability, `0` extra hunger)\n"
+            "• **Tree Harvester:** Fell whole trees with fast leaf decay & auto-replanted saplings (**only** initial log costs durability, `0` extra hunger)\n"
+            "• **World Rules:** **Hard** difficulty · **Keep Inventory** enabled in all dimensions · **1-Player Sleep** (`players_sleeping_percentage = 0`)\n\n"
+            "**Cross-Play, LODs & Discord**\n"
+            "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
+            "• **World & LODs:** `100`-chunk radius pre-generated + **Distant Horizons `256`-chunk** server LOD streaming\n"
+            "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
+            "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)"
         ),
     })
 
