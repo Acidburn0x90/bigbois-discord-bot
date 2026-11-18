@@ -97,7 +97,22 @@ def main() -> None:
         ("Pink", 0xE91E63),
     ]:
         if rname not in roles_by_name:
-            req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": False})
+            roles_by_name[rname] = req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": False})
+
+    # Ensure chat color roles sit above platform/ping roles so chosen colors always take priority
+    color_order = ["Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Pink"]
+    below_order = ["Player", "Java", "Bedrock", "Console", "Updates"]
+    ordered_names = below_order + color_order
+    pos_payload = [
+        {"id": roles_by_name[n]["id"], "position": idx + 1}
+        for idx, n in enumerate(ordered_names)
+        if n in roles_by_name
+    ]
+    if pos_payload:
+        try:
+            req("PATCH", f"/guilds/{GUILD_ID}/roles", pos_payload)
+        except urllib.error.HTTPError:
+            pass
 
     bot_id = req("GET", "/users/@me")["id"]
     # Read-only for @everyone (deny SEND_MESSAGES=2048); allow bot SEND_MESSAGES+EMBED_LINKS (18432)
