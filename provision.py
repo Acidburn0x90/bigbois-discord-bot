@@ -220,6 +220,7 @@ def main() -> None:
             "**Cross-Play, LODs & Discord**\n"
             "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
             "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
+            "• **Voice & Tab:** **Simple Voice Chat** (`24454/udp`, optional client mod) + **TabTPS** (live TPS/MSPT/ping in Tab)\n"
             "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
             "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)"
         ),
