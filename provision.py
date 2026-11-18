@@ -162,7 +162,7 @@ def main() -> None:
     ensure_ch("mc-chat", 0, cat_mc, "Live 2-way chat bridge with BigBois Fabric 26.3", pos=0)
     ensure_ch("mc-status", 0, cat_mc, "Server start/stop notifications", ro=True, pos=1)
     ensure_ch("coords-and-builds", 0, cat_mc, "Base coordinates, farms & screenshots", pos=2)
-    ensure_ch("suggestions", 0, cat_mc, "Mod, plugin, and server ideas", pos=3)
+    ensure_ch("feedback-and-suggestions", 0, cat_mc, "Share feedback, vote on polls, and suggest features", pos=3)
     ensure_ch("bug-reports", 0, cat_mc, "Connection, mod, or cross-play issues", pos=4)
 
     cat_games = ensure_cat("🎮 GAMES & BOTS", 3)
