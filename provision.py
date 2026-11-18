@@ -3,6 +3,7 @@
 
 import json
 import os
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -39,15 +40,26 @@ def req(method: str, path: str, payload: dict | None = None) -> dict | list:
         return json.loads(body) if body else {}
 
 
-def replace_bot_embed(channel_id: str, embed: dict) -> None:
-    """Delete previous bot messages in channel so only the latest message remains."""
+def replace_bot_embeds_with_reactions(channel_id: str, items: list[tuple[dict, list[str]]]) -> None:
+    """Delete previous bot messages, post new embeds, and seed reaction emojis."""
     for m in req("GET", f"/channels/{channel_id}/messages?limit=25"):
         if m.get("author", {}).get("bot"):
             try:
                 req("DELETE", f"/channels/{channel_id}/messages/{m['id']}")
             except urllib.error.HTTPError:
                 pass
-    req("POST", f"/channels/{channel_id}/messages", {"embeds": [embed]})
+    for embed, emojis in items:
+        msg = req("POST", f"/channels/{channel_id}/messages", {"embeds": [embed]})
+        for em in emojis:
+            enc = urllib.parse.quote(em)
+            try:
+                req("PUT", f"/channels/{channel_id}/messages/{msg['id']}/reactions/{enc}/@me")
+            except urllib.error.HTTPError:
+                pass
+
+
+def replace_bot_embed(channel_id: str, embed: dict) -> None:
+    replace_bot_embeds_with_reactions(channel_id, [(embed, [])])
 
 
 def main() -> None:
@@ -71,9 +83,17 @@ def main() -> None:
         ("Bedrock", 0x5865F2),
         ("Console", 0x9B59B6),
         ("Updates", 0x1ABC9C),
+        ("Red", 0xE74C3C),
+        ("Orange", 0xE67E22),
+        ("Yellow", 0xF1C40F),
+        ("Green", 0x2ECC71),
+        ("Cyan", 0x1ABC9C),
+        ("Blue", 0x3498DB),
+        ("Purple", 0x9B59B6),
+        ("Pink", 0xE91E63),
     ]:
         if rname not in roles_by_name:
-            req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": True})
+            req("POST", f"/guilds/{GUILD_ID}/roles", {"name": rname, "color": color, "mentionable": False})
 
     bot_id = req("GET", "/users/@me")["id"]
     # Read-only for @everyone (deny SEND_MESSAGES=2048); allow bot SEND_MESSAGES+EMBED_LINKS (18432)
@@ -189,14 +209,25 @@ def main() -> None:
         ),
     })
 
-    replace_bot_embed(ch_roles, {
-        "title": "Self-Assignable Roles",
-        "color": 0x1ABC9C,
-        "description": (
-            "Roles created: `@Player`, `@Java`, `@Bedrock`, `@Console`, `@Updates`.\n"
-            "Once you invite **Carl-bot** (see `#bot-commands`), bind reaction roles to this message!"
-        ),
-    })
+    replace_bot_embeds_with_reactions(ch_roles, [
+        ({
+            "title": "Platform & Ping Roles",
+            "color": 0x1ABC9C,
+            "description": (
+                "React below to pick your platform & notification roles:\n"
+                "🎮 **Java** · 📱 **Bedrock** · 🕹️ **Console** · 🔔 **Updates**"
+            ),
+        }, ["🎮", "📱", "🕹️", "🔔"]),
+        ({
+            "title": "Chat Color Roles",
+            "color": 0x5865F2,
+            "description": (
+                "React below to pick your Discord & in-game chat color:\n"
+                "🔴 **Red** · 🟠 **Orange** · 🟡 **Yellow** · 🟢 **Green**\n"
+                "🩵 **Cyan** · 🔵 **Blue** · 🟣 **Purple** · 🌸 **Pink**"
+            ),
+        }, ["🔴", "🟠", "🟡", "🟢", "🩵", "🔵", "🟣", "🌸"]),
+    ])
 
     replace_bot_embed(ch_bots, {
         "title": "Installed Bots & Features",
