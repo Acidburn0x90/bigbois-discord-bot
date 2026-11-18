@@ -101,13 +101,11 @@ def main() -> None:
 
     # Ensure chat color roles sit above platform/ping roles so chosen colors always take priority
     color_order = ["Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Pink"]
-    below_order = ["Player", "Java", "Bedrock", "Console", "Updates"]
-    ordered_names = below_order + color_order
-    pos_payload = [
-        {"id": roles_by_name[n]["id"], "position": idx + 1}
-        for idx, n in enumerate(ordered_names)
-        if n in roles_by_name
-    ]
+    below_order = ["Updates", "Console", "Java", "Bedrock", "Player"]
+    pos_payload = (
+        [{"id": roles_by_name[n]["id"], "position": 2} for n in below_order if n in roles_by_name]
+        + [{"id": roles_by_name[n]["id"], "position": 7} for n in color_order if n in roles_by_name]
+    )
     if pos_payload:
         try:
             req("PATCH", f"/guilds/{GUILD_ID}/roles", pos_payload)
