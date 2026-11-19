@@ -54,6 +54,33 @@ async def on_ready() -> None:
     print(f"BigBois bot ready as {client.user}")
 
 
+@client.event
+async def on_member_join(member: discord.Member) -> None:
+    guild = member.guild
+    general = discord.utils.get(guild.text_channels, name="general")
+    if not general:
+        return
+    ch_map = {c.name: c.mention for c in guild.text_channels}
+    embed = discord.Embed(
+        title=f"Welcome to {guild.name}, {member.display_name}!",
+        color=0x3BA55D,
+        description=(
+            f"Glad to have you here, {member.mention}! Here's how to jump in:\n"
+            f"• **Server IP & Quick Start:** {ch_map.get('welcome-and-info', '#welcome-and-info')}\n"
+            f"• **Pick Your Platform & Chat Color:** {ch_map.get('roles', '#roles')}\n"
+            f"• **Download 26.3 Modpacks (Optional):** {ch_map.get('modpacks', '#modpacks')}\n"
+            f"• **See All Custom Tweaks & Recipes:** {ch_map.get('server-changes', '#server-changes')}\n"
+            f"• **Live In-Game Chat:** {ch_map.get('mc-chat', '#mc-chat')} (run `/dmcc link` to link your IGN!)"
+        ),
+    )
+    if member.display_avatar:
+        embed.set_thumbnail(url=member.display_avatar.url)
+    try:
+        await general.send(embed=embed)
+    except discord.Forbidden:
+        pass
+
+
 async def handle_reaction(payload: discord.RawReactionActionEvent, add: bool) -> None:
     if client.user and payload.user_id == client.user.id:
         return

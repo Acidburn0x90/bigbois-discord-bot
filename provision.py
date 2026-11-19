@@ -224,11 +224,11 @@ def main() -> None:
         "color": 0x5865F2,
         "footer": updated_footer,
         "description": (
-            "**1. Lite (`29` mods · `35 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap, Inventory Sorting:\n"
+            "**1. Lite (`31` mods · `39 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap, Inventory Sorting, Litematica:\n"
             f"• [CurseForge (.zip)]({link('bigbois-lite-26.3.zip', 'bigbois-lite-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-lite-26.3.mrpack', 'bigbois-lite-26.3.mrpack')})\n\n"
-            "**2. Standard (`54` mods · `49 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
+            "**2. Standard (`56` mods · `53 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
             f"• [CurseForge (.zip)]({link('bigbois-standard-26.3.zip', 'bigbois-standard-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-standard-26.3.mrpack', 'bigbois-standard-26.3.mrpack')})\n\n"
-            "**3. Ultra DH+Shaders (`56` mods · `79 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
+            "**3. Ultra DH+Shaders (`58` mods · `82 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
             f"• [CurseForge (.zip)]({link('bigbois-ultra-dh-shaders-26.3.zip', 'bigbois-ultra-dh-shaders-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-ultra-dh-shaders-26.3.mrpack', 'bigbois-ultra-dh-shaders-26.3.mrpack')})\n\n"
             "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`).\n\n"
             f"*Release published: <t:{pub_ts}:R> · Checked: <t:{now_ts}:R>*"
@@ -280,6 +280,7 @@ def main() -> None:
             "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
             "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
             "• **Voice & Tab:** **Simple Voice Chat** (`24454/udp`, optional client mod) + **TabTPS** (live TPS/MSPT/ping in Tab)\n"
+            "• **Schematics:** **Litematica** (`0.29.1`, included in all modpacks) + **Servux** (`0.12.2` server-side NBT/bounding-box sync)\n"
             "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
             "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)\n\n"
             f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
