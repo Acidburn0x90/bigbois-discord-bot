@@ -295,7 +295,7 @@ def main() -> None:
             "• **Inventory Sorting:** Server-side chest & inventory sorting (works for all players; middle-click / `/sort`)\n"
             "• **Veinminer:** Mine entire ore veins at once (works with Fortune/Silk Touch; **only** initial ore costs durability, `0` extra hunger)\n"
             "• **Tree Harvester:** Fell whole trees with fast leaf decay & auto-replanted saplings (**only** initial log costs durability, `0` extra hunger)\n"
-            "• **World Rules:** **Hard** difficulty · **Keep Inventory** enabled in all dimensions · **1-Player Sleep** (`players_sleeping_percentage = 0`)\n\n"
+            "• **World Rules:** **Hard** difficulty · **Keep Inventory** enabled in all dimensions · **1-Player Sleep** (`players_sleeping_percentage = 0`) · **3x Tick Speed** (`random_tick_speed = 9`)\n\n"
             "**Cross-Play, LODs & Discord**\n"
             "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
             "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
