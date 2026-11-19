@@ -156,7 +156,8 @@ def main() -> None:
     cat_packs = ensure_cat("📦 MODPACKS & GUIDES", 1)
     ch_modpacks = ensure_ch("modpacks", 0, cat_packs, "Direct downloads for Lite / Standard / Ultra 26.3 packs", ro=True, pos=0)
     ch_crossplay = ensure_ch("crossplay-guide", 0, cat_packs, "How to join from Switch, Xbox, PlayStation, Mobile & PC", ro=True, pos=1)
-    ch_changes = ensure_ch("server-changes", 0, cat_packs, "Every non-vanilla tweak, recipe, mod, and command on the server", ro=True, pos=2)
+    ch_guides = ensure_ch("mod-guides", 0, cat_packs, "How to use Litematica, Liteminer, Inventory Sorting & Voice Chat", ro=True, pos=2)
+    ch_changes = ensure_ch("server-changes", 0, cat_packs, "Every non-vanilla tweak, recipe, mod, and command on the server", ro=True, pos=3)
 
     cat_mc = ensure_cat("⛏️ MINECRAFT", 2)
     ensure_ch("mc-chat", 0, cat_mc, "Live 2-way chat bridge with BigBois Fabric 26.3", pos=0)
@@ -224,14 +225,33 @@ def main() -> None:
         "color": 0x5865F2,
         "footer": updated_footer,
         "description": (
-            "**1. Lite (`31` mods · `39 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap, Inventory Sorting, Litematica:\n"
+            "**1. Lite (`34` mods · `42 MiB`)** — Max FPS + JEI, Jade, AppleSkin, JourneyMap, Inventory Sorting, Litematica, Liteminer:\n"
             f"• [CurseForge (.zip)]({link('bigbois-lite-26.3.zip', 'bigbois-lite-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-lite-26.3.mrpack', 'bigbois-lite-26.3.mrpack')})\n\n"
-            "**2. Standard (`56` mods · `53 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
+            "**2. Standard (`59` mods · `56 MiB`)** — Lite + Continuity, BetterGrassify, Dynamic Lights, Zoomify:\n"
             f"• [CurseForge (.zip)]({link('bigbois-standard-26.3.zip', 'bigbois-standard-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-standard-26.3.mrpack', 'bigbois-standard-26.3.mrpack')})\n\n"
-            "**3. Ultra DH+Shaders (`58` mods · `82 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
+            "**3. Ultra DH+Shaders (`61` mods · `85 MiB`)** — Standard + Distant Horizons (`128` dynamic LODs) + Iris + MakeUp-UltraFast:\n"
             f"• [CurseForge (.zip)]({link('bigbois-ultra-dh-shaders-26.3.zip', 'bigbois-ultra-dh-shaders-26.3.zip')}) · [Modrinth / Prism (.mrpack)]({link('bigbois-ultra-dh-shaders-26.3.mrpack', 'bigbois-ultra-dh-shaders-26.3.mrpack')})\n\n"
             "*How to import:* In CurseForge click **Import** → select the `.zip` (or in Prism Launcher drag-and-drop the `.mrpack`).\n\n"
             f"*Release published: <t:{pub_ts}:R> · Checked: <t:{now_ts}:R>*"
+        ),
+    })
+
+    replace_bot_embed(ch_guides, {
+        "title": "Mod Quick-Start Guides (Litematica & Liteminer)",
+        "color": 0x3498DB,
+        "footer": updated_footer,
+        "description": (
+            "**📐 How to Use Litematica (Build Schematics / Holograms)**\n"
+            "1. Hold a **Stick** (the default Litematica tool) — `Ctrl + Scroll` switches modes.\n"
+            "2. Press **`M`** to open the Litematica menu (`M + C` opens Settings).\n"
+            "3. **Save a build:** Select **Area Selection** mode → left/right-click two corners with a Stick → `M` → **Area Editor** → **Save Schematic**.\n"
+            "4. **Load a hologram:** Put `.litematic` files in your instance's `schematics/` folder → `M` → **Load Schematics** → check **Create Placement**.\n"
+            "5. **Move / Rotate / Layers:** `M` → **Schematic Placements** → **Configure** to nudge/rotate; `M + C` → **Render Layers** to build layer-by-layer (`PageUp` / `PageDown`).\n\n"
+            "**⛏️ How to Use Liteminer (Shape & Tunnel Mining)**\n"
+            "1. Hold the **Liteminer key** (default **`~` / Grave**, customizable in **Options → Controls → Key Binds**) while looking at blocks.\n"
+            "2. **Switch Mining Shape:** Hold the Liteminer key + **`Shift + Scroll`** (or use the shape-cycle keybind) to switch between *Shapeless*, *3x3 Tunnel*, *1x2 Tunnel*, *Staircase*, etc.\n"
+            "3. Break the block while holding the key to mine the highlighted outline at once.\n\n"
+            f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
         ),
     })
 
@@ -280,7 +300,7 @@ def main() -> None:
             "• **Any Version / Any Console:** Java `1.8`–`26.3` (`ViaFabric` + `ViaBackwards` + `ViaRewind`) & Bedrock/Switch/Xbox/PS (`Geyser` + `Floodgate`)\n"
             "• **World & LODs:** `100`-chunk spawn pre-generated + **Distant Horizons `128`-chunk** dynamic per-player LOD streaming + **JourneyMap** world sync\n"
             "• **Voice & Tab:** **Simple Voice Chat** (`24454/udp`, optional client mod) + **TabTPS** (live TPS/MSPT/ping in Tab)\n"
-            "• **Schematics:** **Litematica** (`0.29.1`, included in all modpacks) + **Servux** (`0.12.2` server-side NBT/bounding-box sync)\n"
+            "• **Schematics & Shape Mining:** **Litematica** (`0.29.1` + server **Servux**) & **Liteminer** (`4.5.2`, hold `~` for shape/tunnel mining — see `#mod-guides`)\n"
             "• **Discord Link:** Run **`/dmcc link`** in Discord to link your Minecraft IGN for in-game `@mention` pings\n"
             "• **Protection:** `Ledger` block/chest logging + daily `04:00` backups (3-backup rotation)\n\n"
             f"*Last updated: <t:{now_ts}:R> (<t:{now_ts}:f>)*"
